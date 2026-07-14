@@ -11,7 +11,7 @@ The repo is a two-app monorepo with no shared root tooling (no root `package.jso
 - `apps/api` — Spring Boot 4.1.0 backend (Java 21, Gradle)
 - `apps/web` — Vite + React 19 + TypeScript frontend
 
-The codebase currently has `Product`, `Order`, and `OrderItem` JPA entities; no repositories, services, or controllers yet. Don't assume the full architecture described below exists — check current source before relying on it.
+The codebase currently has all five domain entities implemented: `User`, `Product`, `Order`, `OrderItem`, and `Payment`. No repositories, services, or controllers yet. Don't assume the full architecture described below exists — check current source before relying on it.
 
 ## Commands
 
@@ -59,13 +59,17 @@ No test runner is currently configured for the web app.
 - Data fetching/state: TanStack Query + axios. Forms: react-hook-form + zod via `@hookform/resolvers`.
 - Linting via oxlint (`.oxlintrc.json`), not ESLint.
 
-## Domain model (planned)
+## Domain model
 
-- `User` — id, nome, email, senha_hash, role (`ADMIN` / `CLIENTE`)
-- `Product` — id, nome, descricao, preco_centavos, estoque, imagem_url, ativo
-- `Order` — id, user_id, status (`PENDENTE` / `PAGO` / `CANCELADO`), total_centavos
-- `OrderItem` — id, order_id, product_id, quantidade, preco_unitario_centavos
-- `Payment` — id, order_id, gateway (`STRIPE` / `MERCADOPAGO`), gateway_payment_id, status (`PENDENTE` / `APROVADO` / `RECUSADO`)
+All five entities exist in source today:
+
+- `User` — id, nome, email, senha_hash, role (`ADMIN` / `CLIENTE`) *(implemented)*
+- `Product` — id, nome, descricao, preco_centavos, estoque, imagem_url, ativo *(implemented)*
+- `Order` — id, user_id, status (`PENDENTE` / `PAGO` / `CANCELADO`), total_centavos *(implemented)*
+- `OrderItem` — id, order_id, product_id, quantidade, preco_unitario_centavos *(implemented)*
+- `Payment` — id, order_id, gateway (`STRIPE` / `MERCADOPAGO`), gateway_payment_id, status (`PENDENTE` / `APROVADO` / `RECUSADO`) *(implemented)*
+
+Next: repositories, then use cases, then controllers — implement one feature vertically (e.g. `Product` end-to-end) before moving to the next, following the existing `<feature>/domain` package convention.
 
 `Payment` is deliberately its own entity, not fields on `Order` — keeps the order/business logic decoupled from whichever gateway is wired in. Money fields are integer cents, not decimal, to avoid floating-point rounding errors.
 
@@ -83,6 +87,13 @@ No test runner is currently configured for the web app.
 - Use case tests must cover the failure/validation path, not just the happy path — assert on the actual returned/thrown value and `verify()` mock calls with the expected arguments, never just `assertNotNull`.
 - Exception tests use JUnit 5's `assertThrows`, not manual try/catch.
 - Integration tests (Testcontainers, real Postgres) are reserved for flows that cross layers — e.g. full checkout: order creation → payment webhook → stock decrement.
+
+## CI
+
+GitHub Actions, two separate workflows (`.github/workflows/api.yml`, `.github/workflows/web.yml`), each filtered by `paths` to only its own app — avoids running the frontend CI when only the backend changed, and vice versa. Both run on `ubuntu-latest`, which ships with Docker preinstalled, so Testcontainers-based integration tests work with no extra setup.
+
+- API: `./gradlew build` (compiles + runs all tests, including Testcontainers)
+- Web: `npm ci` → `npm run lint` → `npm run build`
 
 ## Database migrations
 
