@@ -49,7 +49,7 @@ No test runner is currently configured for the web app.
 
 - Package root: `com.nicolai.ecommerce`. Feature code is organized by domain package with a `domain` sub-package for entities, e.g. `com.nicolai.ecommerce.product.domain.Product` — follow this `<feature>/domain` (and expect `<feature>/{web,service,repository}` as siblings) convention when adding new features rather than layering by technical type (`entities/`, `controllers/`, etc. at the top level).
 - Stack: Spring Web MVC, Spring Data JPA, Spring Security, Bean Validation, PostgreSQL driver. JWT auth and resource-owner access control are intended per the README but not yet implemented in source.
-- Integration tests are expected to use Testcontainers per the README's stated intent, though no Testcontainers dependency is present in `build.gradle` yet — add it when introducing the first real integration test.
+- Integration tests use Testcontainers (`spring-boot-testcontainers`, `testcontainers:junit-jupiter`, `testcontainers:postgresql` — added in `build.gradle`). Pattern: `@Testcontainers` + `@Container static PostgreSQLContainer<?>` with `@ServiceConnection`, so Spring wires the `DataSource` automatically — no manual `@DynamicPropertySource`.
 
 ### Web
 
@@ -83,6 +83,12 @@ No test runner is currently configured for the web app.
 - Use case tests must cover the failure/validation path, not just the happy path — assert on the actual returned/thrown value and `verify()` mock calls with the expected arguments, never just `assertNotNull`.
 - Exception tests use JUnit 5's `assertThrows`, not manual try/catch.
 - Integration tests (Testcontainers, real Postgres) are reserved for flows that cross layers — e.g. full checkout: order creation → payment webhook → stock decrement.
+
+## Database migrations
+
+Flyway (not Liquibase — simpler, plain SQL, matches Postgres-only scope). Migration files live in `src/main/resources/db/migration/`, named `V{n}__description.sql` (e.g. `V1__create_initial_schema.sql`), applied in order automatically on startup.
+
+`spring.jpa.hibernate.ddl-auto` is set to `validate`, not `update` — Hibernate checks the schema matches the entities but never generates or alters DDL itself. Flyway is the single source of truth for schema changes. Every new entity or column needs a new versioned migration file, never a reliance on Hibernate auto-generation.
 
 ## Scope (v1)
 
