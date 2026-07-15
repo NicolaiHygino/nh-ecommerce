@@ -41,4 +41,48 @@ public class Product {
   @Column(name = "created_at", nullable = false, updatable = false)
   private LocalDateTime createdAt = LocalDateTime.now();
 
+  protected Product() {
+  }
+
+  public Product(String name, String description, Long cents, Integer stock, String imageUrl, Boolean ativo) {
+    this.name = name;
+    this.description = description;
+    this.cents = cents;
+    this.stock = stock;
+    this.imageUrl = imageUrl;
+    this.ativo = ativo;
+  }
+
+  public Long getId() {
+    return id;
+  }
+
+  public String getName() {
+    return name;
+  }
+
+  public String getDescription() {
+    return description;
+  }
+
+  public Long getCents() {
+    return cents;
+  }
+
+  public Integer getStock() {
+    return stock;
+  }
+
+  public String getImageUrl() {
+    return imageUrl;
+  }
+
+  public Boolean getAtivo() {
+    return ativo;
+  }
+
+  public LocalDateTime getCreatedAt() {
+    return createdAt;
+  }
+
 }
